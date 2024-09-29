@@ -5,12 +5,17 @@ const cors = require("cors");
 const authRoutes = require("./routes/authRoutes");
 const taskRoutes = require("./routes/tasks");
 const connectDB = require("./config/database");
-
+const cors = require("cors");
 const app = express();
+// middleware
+const corsOptions = {
+  origin: "http://localhost:3000",
+};
 
 // Middleware
 app.use(cors());
 app.use(express.json());
+app.use(cors(corsOptions));
 
 // Connect to MongoDB
 connectDB();
