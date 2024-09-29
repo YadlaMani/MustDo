@@ -1,8 +1,14 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import axios from "axios"; // Make sure axios is installed: npm install axios
 import { toast } from "react-toastify"; // For showing notifications
 
-function CreateTaskDialog({ isOpen, onClose }) {
+function CreateTaskDialog({
+  isOpen,
+  onClose,
+  task,
+  onTaskCreated,
+  onTaskUpdated,
+}) {
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
   const [dueDate, setDueDate] = useState("");
@@ -10,6 +16,28 @@ function CreateTaskDialog({ isOpen, onClose }) {
   const [assignedUser, setAssignedUser] = useState("");
   const [priority, setPriority] = useState("Medium");
   const [isLoading, setIsLoading] = useState(false);
+
+  useEffect(() => {
+    if (task) {
+      setTitle(task.title || "");
+      setDescription(task.description || "");
+      setDueDate(task.dueDate ? task.dueDate.split("T")[0] : "");
+      setStatus(task.status || "To Do");
+      setAssignedUser(task.assignedUser || "");
+      setPriority(task.priority || "Medium");
+    } else {
+      resetForm();
+    }
+  }, [task]);
+
+  const resetForm = () => {
+    setTitle("");
+    setDescription("");
+    setDueDate("");
+    setStatus("To Do");
+    setAssignedUser("");
+    setPriority("Medium");
+  };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -23,28 +51,47 @@ function CreateTaskDialog({ isOpen, onClose }) {
       assignedUser,
       priority,
     };
-    console.log(taskData);
+
     try {
       const token = localStorage.getItem("token");
-      const response = await axios.post(
-        `${import.meta.env.VITE_API_URL}/api/tasks`,
-        taskData,
-        {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        }
-      );
+      let response;
 
-      console.log("Task created:", response.data);
-      toast.success("Task created successfully!");
+      if (task) {
+        console.log("Updating task with ID:", task._id);
+        console.log("Task data:", taskData);
+        response = await axios.put(
+          `${import.meta.env.VITE_API_URL}/api/tasks/${task._id}`,
+          taskData,
+          {
+            headers: {
+              Authorization: `Bearer ${token}`,
+            },
+          }
+        );
+        console.log("Update response:", response.data);
+        toast.success("Task updated successfully!");
+        onTaskUpdated(response.data);
+      } else {
+        response = await axios.post(
+          `${import.meta.env.VITE_API_URL}/api/tasks`,
+          taskData,
+          {
+            headers: {
+              Authorization: `Bearer ${token}`,
+            },
+          }
+        );
+        toast.success("Task created successfully!");
+        onTaskCreated(response.data);
+      }
+
       onClose();
     } catch (error) {
-      console.error(
-        "Error creating task:",
-        error.response ? error.response.data : error.message
+      console.error("Error saving task:", error);
+      console.error("Error response:", error.response);
+      toast.error(
+        `Failed to ${task ? "update" : "create"} task. Please try again.`
       );
-      toast.error("Failed to create task. Please try again.");
     } finally {
       setIsLoading(false);
     }
@@ -56,7 +103,7 @@ function CreateTaskDialog({ isOpen, onClose }) {
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
       <div className="bg-white rounded-lg p-8 max-w-md w-full mx-auto">
         <h2 className="text-lg font-medium text-gray-900 mb-4">
-          Create New Task
+          {task ? "Edit Task" : "Create New Task"}
         </h2>
         <form onSubmit={handleSubmit}>
           <div className="mb-4">
@@ -171,7 +218,13 @@ function CreateTaskDialog({ isOpen, onClose }) {
               className="px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-[#FF5A5F] hover:bg-[#FF385E] focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#FF5A5F]"
               disabled={isLoading}
             >
-              {isLoading ? "Creating..." : "Create Task"}
+              {isLoading
+                ? task
+                  ? "Updating..."
+                  : "Creating..."
+                : task
+                ? "Update Task"
+                : "Create Task"}
             </button>
           </div>
         </form>
