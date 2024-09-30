@@ -5,7 +5,7 @@ const cors = require("cors");
 const authRoutes = require("./routes/authRoutes");
 const taskRoutes = require("./routes/tasks");
 const connectDB = require("./config/database");
-const cors = require("cors");
+
 const app = express();
 // middleware
 const corsOptions = {
