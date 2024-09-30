@@ -9,7 +9,7 @@ const connectDB = require("./config/database");
 const app = express();
 // middleware
 const corsOptions = {
-  origin: "http://localhost:3000",
+  origin: "https://mustdoo.netlify.app/",
 };
 
 // Middleware
